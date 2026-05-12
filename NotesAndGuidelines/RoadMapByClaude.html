@@ -1,0 +1,116 @@
+
+<style>
+  h2.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .phase{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:12px;overflow:hidden;cursor:pointer}
+  .phase-header{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--color-background-secondary);user-select:none}
+  .phase-body{display:none;padding:16px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary)}
+  .phase-body.open{display:block}
+  .badge{font-size:11px;font-weight:500;padding:2px 10px;border-radius:20px;white-space:nowrap}
+  .b-purple{background:#EEEDFE;color:#3C3489}.b-teal{background:#E1F5EE;color:#0F6E56}.b-amber{background:#FAEEDA;color:#854F0B}.b-coral{background:#FAECE7;color:#993C1D}.b-blue{background:#E6F1FB;color:#185FA5}.b-green{background:#EAF3DE;color:#3B6D11}
+  .step{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+  .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+  .d-purple{background:#7F77DD}.d-teal{background:#1D9E75}.d-amber{background:#BA7517}.d-coral{background:#D85A30}.d-blue{background:#378ADD}.d-green{background:#639922}
+  .step-text{font-size:13px;color:var(--color-text-primary);line-height:1.6}
+  .step-text b{font-weight:500}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin:2px 2px 0 0;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);background:var(--color-background-secondary)}
+  .chevron{margin-left:auto;font-size:16px;color:var(--color-text-secondary);transition:transform .2s}
+  .chevron.open{transform:rotate(180deg)}
+  .phase-title{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+  .phase-sub{font-size:12px;color:var(--color-text-secondary)}
+  .section-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  hr.div{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:12px 0}
+</style>
+<h2 class="sr-only">Step-by-step research roadmap for synthetic lethality prediction in breast cancer using GNNs, organized into six phases from biology foundations through publication.</h2>
+
+<div style="padding:4px 0 12px;font-size:13px;color:var(--color-text-secondary)">Click each phase to expand. Estimated total timeline: <b style="color:var(--color-text-primary)">10–14 months</b></div>
+
+<div id="phases"></div>
+<script>
+const phases=[
+{id:0,color:"purple",label:"Phase 1",duration:"Weeks 1–4",title:"Biology & domain foundations",sub:"Build the conceptual base before touching code",steps:[
+  {t:"Understand synthetic lethality (SL) mechanistically",d:"SL occurs when simultaneous loss-of-function of two genes causes cell death, but either mutation alone is tolerated. The BRCA1/2–PARP axis is the canonical breast cancer example. Know why PARP inhibitors (olaparib, rucaparib) work in HR-deficient tumors."},
+  {t:"Study breast cancer genomic landscape",d:"Focus on mutation patterns in BRCA1, BRCA2, PALB2, BARD1, TP53, PIK3CA, RAD51C. Understand subtypes (luminal A/B, HER2+, TNBC) and why TNBC has the fewest targeted therapies — your model should help."},
+  {t:"Learn DNA damage response (DDR) pathways",d:"Homologous recombination (HR), base excision repair (BER), NHEJ, mismatch repair. SL pairs cluster along these pathways — understanding them is essential for interpreting your GNN's predictions."},
+  {t:"Master graph neural network fundamentals",d:"GCN, GAT, GraphSAGE, message passing. Then study GNN architectures specific to biology: KG4SL, SLGNN, DDGCN, DGIB4SL. Understand link prediction as a task."},
+],tags:["BRCA1/2","DDR pathways","HR repair","GCN/GAT","Link prediction"]},
+
+{id:1,color:"teal",label:"Phase 2",duration:"Weeks 5–8",title:"Data collection & graph construction",sub:"Multi-source biological knowledge graph for breast cancer",steps:[
+  {t:"Primary SL labels from SynLethDB 2.0",d:"Download experimentally validated SL pairs. Filter to high-confidence entries. Use only pairs from human breast/epithelial cell lines (MCF7, MDA-MB-231, T47D) to stay breast-cancer-specific. ~5,000–10,000 high-quality pairs available."},
+  {t:"Functional genomics: DepMap + CCLE",d:"Pull CRISPR viability scores (Chronos) for breast cancer cell lines from DepMap. Gene expression and mutation profiles from CCLE. This is your ground truth for context-specific essentiality."},
+  {t:"Protein interaction networks",d:"STRING (confidence ≥700), BioGRID, IntAct. Filter to breast-cancer-relevant tissues. These form the core graph edges."},
+  {t:"Pathway & ontology data",d:"KEGG, Reactome, Gene Ontology (Biological Process). Pathway co-membership encodes functional relationships critical for SL inference."},
+  {t:"Construct the heterogeneous knowledge graph",d:"Nodes: genes. Edge types: PPI, co-expression, pathway co-membership, GO term sharing, known SL. This multi-relational graph is your model's input. Aim for 15,000–20,000 gene nodes and 5+ edge types."},
+],tags:["SynLethDB 2.0","DepMap","CCLE","STRING","BioGRID","KEGG","Reactome"]},
+
+{id:2,color:"amber",label:"Phase 3",duration:"Weeks 9–14",title:"Model architecture & novelty",sub:"Your GNN design choices determine publishability",steps:[
+  {t:"Baseline: replicate KG4SL & SLGNN",d:"Reproduce published results on the same dataset splits first. This validates your pipeline and gives fair comparison baselines. Use the SynLethDB benchmark splits."},
+  {t:"Novelty direction 1 — Breast-cancer-specific context conditioning",d:"Most SL models predict population-level pairs. Condition your GNN on breast cancer cell-line profiles (gene expression, mutation status from CCLE/DepMap). Predict SL pairs that are active specifically in TNBC or BRCA1-mutant breast cells."},
+  {t:"Novelty direction 2 — Motif-aware message passing",d:"Inspired by DGIB4SL: encode biologically meaningful graph motifs (triangles = common interactor, feed-forward loops, regulatory triangles) as additional adjacency matrices. Capture higher-order structures missed by standard 1-hop GNNs."},
+  {t:"Novelty direction 3 — Explainability via subgraph extraction",d:"After prediction, extract the minimal subgraph that justifies each SL prediction. This is a requirement for biological credibility — reviewers will ask 'what biological pathway explains this pair?'"},
+  {t:"Novelty direction 4 — Drug repurposing integration",d:"Link predicted SL pairs to DrugBank/ChEMBL targets. Identify FDA-approved drugs that hit novel SL partners of common breast cancer mutations. This adds immediate translational value."},
+],tags:["KG4SL","DGIB4SL","Cell-line conditioning","Explainability","Drug repurposing"]},
+
+{id:3,color:"coral",label:"Phase 4",duration:"Weeks 15–20",title:"Rigorous experimental design",sub:"What separates publishable from unpublishable ML papers in biology",steps:[
+  {t:"Negative sampling strategy is critical",d:"Random negatives are too easy and inflate metrics. Use gene-expression-based negative sampling: pairs where both genes are co-expressed in breast cancer cells are harder negatives. The 2025 Nature Communications benchmark shows this alone improves all models significantly."},
+  {t:"Three evaluation splits",d:"(1) Leave-gene-pair-out — standard, (2) Leave-gene-out — harder, tests generalization to unseen genes, (3) Leave-gene-out on BRCA1/2 mutant lines specifically — most clinically relevant. Report all three."},
+  {t:"Benchmark against 5+ baselines",d:"DDGCN, KG4SL, SLGNN, GCATSL, PiLSL, and a simple matrix factorization baseline. Show improvement across AUROC, AUPR, and recall@K (K=10,50,100)."},
+  {t:"Cold-start evaluation",d:"Test on gene pairs where at least one gene has no known SL partners in training. This is the real clinical scenario for novel targets."},
+  {t:"Statistical significance",d:"Run 5-fold CV with 5 random seeds. Report mean ± std. Perform Wilcoxon signed-rank test against baselines. Reviewers in Briefings in Bioinformatics and Bioinformatics require this."},
+],tags:["Negative sampling","Leave-gene-out","AUROC/AUPR","Cold-start","Statistical testing"]},
+
+{id:4,color:"blue",label:"Phase 5",duration:"Weeks 21–26",title:"Biological validation & case studies",sub:"Computational predictions must be grounded in known biology",steps:[
+  {t:"Validate against known SL pairs NOT in training data",d:"Use the SL pairs from DepMap's genetic interaction scores (GI50) as a held-out biological test set. Your model should rank these high."},
+  {t:"BRCA1/2 case study — reproduce known biology",d:"Show your model correctly predicts BRCA1–PARP1, BRCA1–PARP2, BRCA2–POLQ (theta-mediated end joining). If it misses these canonical pairs, something is wrong."},
+  {t:"Novel prediction case study",d:"Pick 3–5 high-confidence novel predictions. Trace through the subgraph explanation: which pathway connects them? Find supporting evidence in the literature (even indirect). This is your paper's most compelling section."},
+  {t:"TCGA survival analysis",d:"For top predicted SL partner genes, check if low expression in BRCA1-mutant TCGA breast tumors correlates with improved survival. This supports clinical relevance without wet-lab experiments."},
+  {t:"Drug enrichment analysis",d:"Are your top-predicted SL partners enriched for known drug targets vs random? Use Fisher's exact test with DrugBank as reference."},
+],tags:["DepMap GI scores","BRCA case study","TCGA survival","Drug enrichment","Subgraph validation"]},
+
+{id:5,color:"green",label:"Phase 6",duration:"Weeks 27–32",title:"Writing & publication strategy",sub:"Target journals and what they expect",steps:[
+  {t:"Target journal selection",d:"Tier 1: Nature Communications, Nucleic Acids Research, Briefings in Bioinformatics. Tier 2: Bioinformatics, PLOS Computational Biology, Frontiers in Genetics. For a methods paper with strong novelty: aim Tier 1. For an application paper: Tier 2 is realistic in 12 months."},
+  {t:"Code & reproducibility",d:"GitHub repo with full pipeline, Docker container, pre-processed data, model checkpoints. NAR and Bioinformatics now require this. Include a Jupyter notebook reproducing the main figures."},
+  {t:"Paper structure for computational biology",d:"Abstract, Introduction (SL in breast cancer, GNN motivation, your gap), Methods (data, graph construction, model, evaluation), Results (benchmarks, case studies, biological validation), Discussion (limitations, future work), Conclusion."},
+  {t:"Preprint on bioRxiv first",d:"Post to bioRxiv before submission. This establishes priority, gets early feedback, and is normal in computational biology. Synchronize GitHub release with the preprint."},
+  {t:"Respond to likely reviewer concerns",d:"Pre-answer in your paper: (1) Why not just matrix factorization? (2) How do you handle false negatives in training data? (3) Is your model cell-line-specific or population-level? (4) How interpretable are the subgraph explanations?"},
+],tags:["Nature Comms","NAR","Briefings in Bioinformatics","bioRxiv","Reproducibility","Docker"]},
+];
+
+const colorMap={purple:"b-purple d-purple",teal:"b-teal d-teal",amber:"b-amber d-amber",coral:"b-coral d-coral",blue:"b-blue d-blue",green:"b-green d-green"};
+
+function render(){
+  const cont=document.getElementById("phases");
+  phases.forEach(p=>{
+    const [bc,dc]=colorMap[p.color].split(" ");
+    const div=document.createElement("div");
+    div.className="phase";
+    div.innerHTML=`
+      <div class="phase-header" onclick="toggle(${p.id})">
+        <span class="badge ${bc}">${p.label}</span>
+        <div>
+          <div class="phase-title">${p.title}</div>
+          <div class="phase-sub">${p.duration} · ${p.sub}</div>
+        </div>
+        <i class="ti ti-chevron-down chevron" id="chev-${p.id}" aria-hidden="true"></i>
+      </div>
+      <div class="phase-body" id="body-${p.id}">
+        <div class="section-label">Key steps</div>
+        ${p.steps.map(s=>`<div class="step"><div class="dot ${dc}"></div><div class="step-text"><b>${s.t}.</b> ${s.d}</div></div>`).join("")}
+        <hr class="div">
+        <div class="section-label">Key resources & tools</div>
+        <div class="pills">${p.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+function toggle(id){
+  const body=document.getElementById("body-"+id);
+  const chev=document.getElementById("chev-"+id);
+  const open=body.classList.toggle("open");
+  chev.classList.toggle("open",open);
+}
+
+render();
+toggle(0);
+</script>
